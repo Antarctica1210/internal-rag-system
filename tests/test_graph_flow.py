@@ -22,7 +22,7 @@ kb_import_app = get_kb_import_workflow()
 
 for event in kb_import_app.stream(initial_state):
     for key, value in event.items():
-        logger.info(f"节点: {key}")
+        logger.info(f"node: {key}")
         final_state = value
 
 logger.info(f"Final State: {json.dumps(final_state, indent=4, ensure_ascii=False)}")
