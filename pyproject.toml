@@ -12,6 +12,7 @@ dependencies = [
     "langchain-openai>=1.1.12",
     "langgraph>=1.1.6",
     "loguru>=0.7.3",
+    "minio>=7.2.20",
     "numpy>=2.4.4",
     "pymilvus>=2.6.11",
     "pymilvus-model>=0.3.2",

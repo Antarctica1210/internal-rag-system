@@ -1,20 +1,27 @@
-# 导入核心依赖：数据类、环境变量读取、路径处理
 from dataclasses import dataclass
 import os
 from dotenv import load_dotenv
 
-# 提前加载.env配置文件（必须在读取环境变量前执行，确保os.getenv能获取到值）
-# 若.env不在项目根目录，可指定路径：load_dotenv(dotenv_path=Path(__file__).parent / ".env")
 load_dotenv()
 
 
-# 定义minerU服务配置
+# MinerU config
 @dataclass
 class MineruConfig:
-    base_url: str
-    api_key : str
+    local_base_url: str   # Local self-hosted mineru-api base URL (e.g. http://localhost:8000)
+    cloud_base_url: str   # MinerU cloud API base URL (e.g. https://mineru.net/api/v4)
+    api_key: str          # API token — only required for cloud API
+    use_local: bool       # True = local self-hosted API, False = MinerU cloud API
+
+    @property
+    def base_url(self) -> str:
+        """Return the active base URL based on the current mode."""
+        return self.local_base_url if self.use_local else self.cloud_base_url
+
 
 mineru_config = MineruConfig(
-    base_url=os.getenv("MINERU_BASE_URL"),
-    api_key=os.getenv("MINERU_API_TOKEN")
+    local_base_url=os.getenv("MINERU_LOCAL_BASE_URL", "http://localhost:8000"),
+    cloud_base_url=os.getenv("MINERU_CLOUD_BASE_URL", "https://mineru.net/api/v4"),
+    api_key=os.getenv("MINERU_API_TOKEN"),
+    use_local=os.getenv("MINERU_USE_LOCAL", "false").lower() == "true"
 )

@@ -1,99 +1,100 @@
-# 环境配置与依赖导入
+# Environment config and dependency imports
 import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.exceptions import LangChainException
 from typing import Optional
 
-# 项目内部依赖
+# Internal project dependencies
 from app.conf.lm_config import lm_config
 from app.core.logger import logger
 
-# 全局缓存：键为(模型名, JSON输出模式)元组，值为ChatOpenAI实例
-# 作用：避免重复初始化客户端，提升性能，统一实例管理
+# Global cache: key is (model_name, json_mode) tuple, value is ChatOpenAI instance
+# Purpose: avoid repeated client initialization, improve performance, centralize instance management
 _llm_client_cache = {}
 
 
 def get_llm_client(model: Optional[str] = None, json_mode: bool = False) -> ChatOpenAI:
     """
-    获取带全局缓存的LangChain ChatOpenAI客户端实例
-    适配OpenAI/千问/即梦AI等**OpenAI兼容API**，支持自定义模型和JSON标准化输出
-    核心特性：缓存机制+配置统一加载+异常精准捕获+国产模型参数适配
+    Get a globally cached LangChain ChatOpenAI client instance.
+    Compatible with OpenAI / Qwen / Jimeng AI and other **OpenAI-compatible APIs**.
+    Supports custom models and structured JSON output.
+    Key features: caching, unified config loading, precise exception handling, domestic model parameter support.
 
-    :param model: 模型名称，优先级：传入参数 > 配置文件lm_config.llm_model > 内置默认qwen3-32b
-    :param json_mode: 是否开启JSON输出模式，开启后返回标准json_object格式（适配结构化数据解析）
-    :return: 初始化完成的ChatOpenAI实例（优先从全局缓存获取，未命中则新建并缓存）
-    :raise ValueError: 缺失API密钥/基础地址等核心配置
-    :raise Exception: 模型初始化失败（LangChain封装层异常）
+    :param model: Model name. Priority: argument > lm_config.llm_model > built-in default qwen3-32b
+    :param json_mode: Whether to enable JSON output mode; returns standard json_object format when enabled
+    :return: Initialized ChatOpenAI instance (returned from cache if available, otherwise created and cached)
+    :raise ValueError: Missing core config such as API key or base URL
+    :raise Exception: Model initialization failure (LangChain layer exception)
     """
-    # 1. 确定目标模型（优先级递减，保证模型名非空）
+    # 1. Determine target model (decreasing priority, ensures model name is never empty)
     target_model = model or lm_config.llm_model or "qwen3-32b"
-    # 缓存键：模型名+JSON模式，唯一标识不同配置的客户端
+    # Cache key: model name + JSON mode, uniquely identifies clients with different configs
     cache_key = (target_model, json_mode)
 
-    # 2. 缓存命中：直接返回已初始化的实例，避免重复创建
+    # 2. Cache hit: return existing instance directly to avoid re-creation
     if cache_key in _llm_client_cache:
-        logger.debug(f"[LLM客户端] 缓存命中，直接返回实例：模型={target_model}，JSON模式={json_mode}")
+        logger.debug(f"[LLM Client] Cache hit, returning existing instance: model={target_model}, json_mode={json_mode}")
         return _llm_client_cache[cache_key]
 
-    # 3. 核心配置校验：拦截缺失的API关键配置，提前抛出明确异常
+    # 3. Core config validation: catch missing API config early and raise a clear exception
     if not lm_config.api_key:
-        raise ValueError("[LLM客户端] 配置缺失：请在.env中配置OPENAI_API_KEY（大模型API密钥）")
+        raise ValueError("[LLM Client] Missing config: please set OPENAI_API_KEY in .env (LLM API key)")
     if not lm_config.base_url:
-        raise ValueError("[LLM客户端] 配置缺失：请在.env中配置OPENAI_API_BASE（API接口基础地址）")
-    logger.info(f"[LLM客户端] 开始初始化新实例：模型={target_model}，JSON模式={json_mode}")
+        raise ValueError("[LLM Client] Missing config: please set OPENAI_API_BASE in .env (API base URL)")
+    logger.info(f"[LLM Client] Initializing new instance: model={target_model}, json_mode={json_mode}")
 
-    # 4. 配置参数组装：区分「国产模型私有参数」和「OpenAI通用参数」
-    # extra_body：千问/即梦等国产模型专属私有参数（LangChain透传至API）
-    extra_body = {"enable_thinking": False}  # 千问专属：关闭思考链输出，减少冗余内容
-    # model_kwargs：OpenAI通用参数，所有兼容API均支持
+    # 4. Assemble config params: separate domestic model private params from standard OpenAI params
+    # extra_body: private params for domestic models like Qwen/Jimeng (passed through by LangChain to the API)
+    extra_body = {"enable_thinking": False}  # Qwen-specific: disable chain-of-thought output to reduce noise
+    # model_kwargs: standard OpenAI params supported by all compatible APIs
     model_kwargs = {}
     if json_mode:
-        # 开启JSON标准输出模式，强制模型返回可解析的json_object
+        # Enable structured JSON output mode, forces model to return a parseable json_object
         model_kwargs["response_format"] = {"type": "json_object"}
-        logger.debug(f"[LLM客户端] 已开启JSON输出模式，模型将返回标准JSON结构")
+        logger.debug(f"[LLM Client] JSON output mode enabled, model will return standard JSON structure")
 
-    # 5. 客户端初始化：捕获LangChain封装层异常，抛出更友好的提示
+    # 5. Client initialization: catch LangChain layer exceptions and re-raise with a friendlier message
     try:
         llm_client = ChatOpenAI(
-            model=target_model,  # 目标模型名
-            temperature=lm_config.llm_temperature or 0.1,  # 低温度保证输出确定性（0~1）
-            api_key=lm_config.api_key,  # API密钥
-            base_url=lm_config.base_url,  # API基础地址（适配国产模型代理地址）
-            extra_body=extra_body,  # 国产模型私有参数透传
-            model_kwargs=model_kwargs,  # OpenAI通用参数
+            model=target_model,                          # Target model name
+            temperature=lm_config.llm_temperature or 0.1,  # Low temperature for deterministic output (0~1)
+            api_key=lm_config.api_key,                  # API key
+            base_url=lm_config.base_url,                # API base URL (supports domestic model proxy addresses)
+            extra_body=extra_body,                       # Domestic model private params passthrough
+            model_kwargs=model_kwargs,                   # Standard OpenAI params
         )
     except LangChainException as e:
-        raise Exception(f"[LLM客户端] 模型【{target_model}】初始化失败（LangChain层）：{str(e)}") from e
+        raise Exception(f"[LLM Client] Model [{target_model}] initialization failed (LangChain layer): {str(e)}") from e
 
-    # 6. 新实例存入全局缓存，供后续调用复用
+    # 6. Store new instance in global cache for reuse in subsequent calls
     _llm_client_cache[cache_key] = llm_client
-    logger.info(f"[LLM客户端] 实例初始化成功并缓存：模型={target_model}，JSON模式={json_mode}")
+    logger.info(f"[LLM Client] Instance initialized and cached: model={target_model}, json_mode={json_mode}")
 
     return llm_client
 
 
-# 测试示例：验证客户端创建、缓存机制及日志输出
+# Test example: verify client creation, caching mechanism, and log output
 if __name__ == "__main__":
-    logger.info("===== 开始执行LLM客户端工具测试 =====")
+    logger.info("===== Starting LLM client utility tests =====")
     try:
-        # 测试1：默认配置（默认模型+普通模式）
+        # Test 1: default config (default model + standard mode)
         client1 = get_llm_client()
-        logger.info("✅ 测试1通过：默认配置客户端创建成功")
+        logger.info("✅ Test 1 passed: default config client created successfully")
 
-        # 测试2：指定多模态模型（qwen-vl-plus）+ 普通模式
+        # Test 2: specify multimodal model (qwen-vl-plus) + standard mode
         client2 = get_llm_client(model="qwen-vl-plus")
-        logger.info("✅ 测试2通过：指定多模态模型客户端创建成功")
+        logger.info("✅ Test 2 passed: multimodal model client created successfully")
 
-        # 测试3：同一模型+模式，验证缓存命中
+        # Test 3: same model + mode, verify cache hit
         client3 = get_llm_client(model="qwen-vl-plus")
-        logger.info(f"✅ 测试3通过：缓存机制验证成功，client2与client3为同一实例：{client2 is client3}")
+        logger.info(f"✅ Test 3 passed: cache verified, client2 and client3 are the same instance: {client2 is client3}")
 
-        # 测试4：开启JSON输出模式
+        # Test 4: enable JSON output mode
         client4 = get_llm_client(model="qwen3-32b", json_mode=True)
-        logger.info("✅ 测试4通过：JSON输出模式客户端创建成功")
+        logger.info("✅ Test 4 passed: JSON output mode client created successfully")
 
     except Exception as e:
-        logger.error(f"❌ LLM客户端工具测试失败：{str(e)}", exc_info=True)
+        logger.error(f"❌ LLM client utility test failed: {str(e)}", exc_info=True)
     finally:
-        logger.info("===== LLM客户端工具测试结束 =====")
+        logger.info("===== LLM client utility tests complete =====")
