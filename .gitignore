@@ -19,3 +19,6 @@ output/
 
 # test_doc
 test_doc/
+
+# ai models
+ai_models/

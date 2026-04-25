@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.135.3",
+    "flagembedding>=1.4.0",
     "grandalf>=0.8",
     "langchain>=1.2.15",
     "langchain-community>=0.4.1",
@@ -13,6 +14,7 @@ dependencies = [
     "langgraph>=1.1.6",
     "loguru>=0.7.3",
     "minio>=7.2.20",
+    "modelscope>=1.36.2",
     "numpy>=2.4.4",
     "pymilvus>=2.6.11",
     "pymilvus-model>=0.3.2",
@@ -21,4 +23,5 @@ dependencies = [
     "torch>=2.11.0",
     "torchaudio>=2.11.0",
     "torchvision>=0.26.0",
+    "transformers>=5.5.0",
 ]
