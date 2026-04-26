@@ -390,8 +390,8 @@ def test_node_item_name_recognition():
         mock_state = ImportGraphState(
             {
                 "task_id": "test_task_123456",
-                "file_title": "Huawei Mate60 Pro Smartphone User Manual",
-                "file_name": "HuaweiMate60Pro_manual.pdf",
+                "file_title": "Implementation of Artificial Intelligence in Agriculture",
+                "file_name": "Implementation_of_Artificial_Intelligence_in_Agriculture.pdf",
                 "chunks": [
                     {
                         "title": "Product Overview",
