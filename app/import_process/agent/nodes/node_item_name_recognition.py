@@ -140,7 +140,14 @@ def step_3_call_llm(file_title: str, context: str) -> str:
         ]
         resp = llm.invoke(messages)
 
-        item_name = getattr(resp, "content", "").strip()
+        # Guard against None, list (multimodal), and non-string content types
+        raw_content = getattr(resp, "content", "")
+        if isinstance(raw_content, list):
+            raw_content = next(
+                (item.get("text", "") for item in raw_content if isinstance(item, dict) and item.get("type") == "text"),
+                ""
+            )
+        item_name = str(raw_content).strip() if raw_content else ""
         item_name = (
             item_name.replace(" ", "")
             .replace("\n", "")

@@ -206,8 +206,13 @@ def summarize_image(
         # 3. Standard LangChain invocation via invoke() (timeout/retry handled by the utility class)
         response = lvm_client.invoke(messages)
 
-        # 4. Parse response (LangChain always returns a unified 'content' field — no multi-level parsing needed)
-        summary = response.content.strip().replace("\n", "")
+        # 4. Parse response — guard against None, non-list, empty list, and non-dict items
+        raw_content = response.content if response and isinstance(response.content, list) else []
+        raw_text = next(
+            (item.get("text", "") for item in raw_content if isinstance(item, dict) and item.get("type") == "text"),
+            ""
+        )
+        summary = raw_text.strip().replace("\n", "") if raw_text else ""
         logger.info(f"Image summary generated successfully: {image_path}, summary: {summary}")
         return summary
 

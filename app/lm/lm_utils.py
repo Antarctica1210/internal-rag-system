@@ -62,7 +62,7 @@ def get_llm_client(model: Optional[str] = None, json_mode: bool = False) -> Chat
             api_key=lm_config.api_key,                  # API key
             base_url=lm_config.base_url,                # API base URL (supports domestic model proxy addresses)
             extra_body=extra_body,                      # Domestic model private params passthrough
-            reasoning={"effort": "low"},                # Optional: set reasoning effort level (none/low/medium/high) for models that support it
+            reasoning={"effort": None},                # Optional: set reasoning effort level (none/low/medium/high) for models that support it
             model_kwargs=model_kwargs,                   # Standard OpenAI params
         )
     except LangChainException as e:
