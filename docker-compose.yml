@@ -71,6 +71,20 @@ services:
       - milvus
     restart: unless-stopped
 
+  mongodb:
+    container_name: mongodb
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./volumes/mongodb/data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
 networks:
   default:
     name: milvus
