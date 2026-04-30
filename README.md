@@ -13,7 +13,7 @@ The system is split into two independent pipelines:
 | **Import Pipeline** | Ingest PDF/Markdown documents → parse → chunk → embed → store in Milvus |
 | **Query Pipeline** | Accept user questions → retrieve relevant chunks → rerank → generate answers |
 
-Both pipelines are implemented as LangGraph state-machine graphs and exposed via FastAPI services.
+Both pipelines are implemented as LangGraph state-machine graphs and exposed via a unified FastAPI service (`app/api/main_service.py`).
 
 ---
 
@@ -63,7 +63,7 @@ flowchart TD
 - **node_document_split** — splits Markdown into semantic chunks
 - **node_bge_embedding** — generates BGE-M3 dense + sparse vectors for each chunk
 - **node_import_milvus** — upserts chunks and vectors into Milvus
-- **file_import_service** — FastAPI service with task status polling (port 8001)
+- **main_service** — Unified FastAPI service handling both import and query pipelines (port 8000)
 
 ### Query Pipeline (`app/query_process/`)
 - **node_item_name_confirm** — resolves and confirms the product name from the user's question using LLM + vector similarity; handles ambiguous and out-of-catalogue queries
@@ -73,7 +73,7 @@ flowchart TD
 - **node_rrf** — Reciprocal Rank Fusion merges results from all retrieval sources
 - **node_rerank** — BGE reranker scores and dynamically truncates to the top-K most relevant chunks
 - **node_answer_output** — assembles the final prompt and calls the LLM; supports SSE streaming
-- **query_server** — FastAPI service with SSE streaming and session history (port 8001)
+- **main_service** — Unified FastAPI service with SSE streaming and session history (port 8000)
 
 ### Infrastructure (`docker-compose.yml`)
 | Service | Port | Purpose |
@@ -148,14 +148,12 @@ BAILIAN_API_KEY=
 ### 4. Run services
 
 ```bash
-# Import service (file upload + processing)
-python -m app.import_process.api.file_import_service
-
-# Query service (chat API)
-python -m app.query_process.api.query_server
+# Unified service (import + query pipelines on port 8000)
+python -m app.api.main_service
 ```
 
-Import UI is available at `http://127.0.0.1:8001/import.html`.
+- **Import UI:** `http://127.0.0.1:8000/import.html`
+- **Chat UI:** `http://127.0.0.1:8000/chat.html`
 
 ---
 
@@ -164,17 +162,17 @@ Import UI is available at `http://127.0.0.1:8001/import.html`.
 ```
 internal-rag-system/
 ├── app/
+│   ├── api/              # Unified FastAPI service (main_service.py)
 │   ├── clients/          # Milvus, MinIO, MongoDB clients
 │   ├── conf/             # Configuration classes (LLM, embedding, reranker, etc.)
 │   ├── core/             # Logger, prompt loader
 │   ├── import_process/   # Document import pipeline
 │   │   ├── agent/        # LangGraph nodes and graph definition
-│   │   ├── api/          # FastAPI import service
 │   │   └── pages/        # Import UI (HTML)
 │   ├── lm/               # LLM, embedding, reranker utilities
 │   ├── query_process/    # Query pipeline
 │   │   ├── agent/        # LangGraph nodes and graph definition
-│   │   └── api/          # FastAPI query service
+│   │   └── page/         # Chat UI (HTML)
 │   ├── tool/             # Model download scripts
 │   └── utils/            # Shared utilities (SSE, task tracking, etc.)
 ├── ai_models/            # Local model weights (gitignored)
