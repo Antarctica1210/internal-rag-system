@@ -66,9 +66,42 @@ services:
     environment:
       MILVUS_URL: milvus:19530
     ports:
-      - "8000:3000"
+      - "8080:3000"
     depends_on:
       - milvus
+    restart: unless-stopped
+
+  rag-service:
+    container_name: rag-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Override localhost URLs with Docker service names
+      - PROJECT_ROOT=/app
+      - MILVUS_URI=http://milvus-standalone:19530
+      - MONGO_URL=mongodb://mongodb:27017
+      - MINIO_ENDPOINT=minio:9000
+    volumes:
+      - ./ai_models:/app/ai_models
+      - ./output:/app/output
+      - ./logs:/app/logs
+    depends_on:
+      milvus:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
   mongodb:

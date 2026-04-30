@@ -1,0 +1,12 @@
+ai_models/
+volumes/
+output/
+logs/
+.git/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+.env
+tests/
+test_doc/
+*.md
