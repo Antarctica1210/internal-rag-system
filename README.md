@@ -148,8 +148,11 @@ BAILIAN_API_KEY=
 ### 4. Run services
 
 ```bash
-# Unified service (import + query pipelines on port 8000)
+# Option 1: via Python module
 python -m app.api.main_service
+
+# Option 2: via Uvicorn (with hot reload)
+uvicorn app.api.main_service:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 - **Import UI:** `http://127.0.0.1:8000/import.html`
