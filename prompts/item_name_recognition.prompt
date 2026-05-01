@@ -1,0 +1,10 @@
+Identify the product name and model from the following information:
+File name: {file_title}
+
+Document excerpt (for reference):
+{context}
+
+Requirements:
+1. Return a string containing the full product name, ideally including brand, model, and name. For example: SuperChef 5000W High-Power Induction Cooker;
+2. Return only the product name — no explanations or additional content;
+3. If the product name cannot be identified, return an empty string.

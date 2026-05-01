@@ -1,0 +1,16 @@
+Conversation history:
+{history_text}
+
+Current user question: {query}
+
+Based on the conversation history and the current question, extract the product name(s) (item_names) the user is asking about.
+1. If the user explicitly mentions product names, extract them. There may be one or more, but no duplicates.
+2. If the user uses pronouns (e.g. "this", "it"), resolve the reference using the conversation history to determine the product name.
+3. If the product name cannot be determined, return an empty list for item_names.
+4. Rewrite the user's question (rewritten_query) so that it is a self-contained, complete question that includes the product name(s).
+
+Return the result directly as JSON in the following format:
+{{
+    "item_names": ["Product A", "Product B"],
+    "rewritten_query": "Regarding Product A and Product B, ..."
+}}

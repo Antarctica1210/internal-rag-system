@@ -1,0 +1,8 @@
+Generate a concise model answer based on the following user query.
+User query: {rewritten_query}
+Requirements:
+1. Keep the answer concise and clear, covering only the core information.
+2. Respond as a domain expert and provide a professional explanation.
+3. Avoid uncertain language such as "assume", "possibly", or "might".
+4. Keep the answer closely relevant to the topic of the query.
+5. Respond in English and keep the answer under 300 words.
