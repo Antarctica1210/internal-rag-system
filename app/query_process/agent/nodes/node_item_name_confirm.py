@@ -10,7 +10,7 @@ from app.core.load_prompt import load_prompt
 from app.query_process.agent.state import QueryGraphState
 from app.utils.task_utils import add_running_task, add_done_task
 from app.clients.mongo_history_utils import get_recent_messages, save_chat_message, update_message_item_names
-from app.lm.lm_utils import get_llm_client
+from app.lm.lm_utils import get_llm_client, extract_response_text
 from app.lm.embedding_utils import generate_embeddings
 from app.clients.milvus_utils import get_milvus_client, create_hybrid_search_requests, hybrid_search
 from dotenv import load_dotenv, find_dotenv
@@ -53,7 +53,7 @@ def step_3_extract_info(query, history) -> Dict:
         response = client.invoke(messages)
         logger.info("Step 3: LLM response received")
 
-        content = response.content
+        content = extract_response_text(response)
         # strip markdown code-block wrapper if present (e.g. ```json ... ```)
         if content.startswith("```json"):
             content = content.replace("```json", "").replace("```", "")

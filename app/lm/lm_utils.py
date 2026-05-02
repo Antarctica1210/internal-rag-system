@@ -14,6 +14,20 @@ from app.core.logger import logger
 _llm_client_cache = {}
 
 
+def extract_response_text(response) -> str:
+    """Extract text content from an LLM response, handling both str and list (content blocks)."""
+    content = getattr(response, "content", "")
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for item in content:
+            if isinstance(item, dict) and item.get("type") == "text":
+                parts.append(item.get("text", ""))
+        return "".join(parts)
+    return str(content)
+
+
 def get_llm_client(model: Optional[str] = None, json_mode: bool = False) -> ChatOpenAI:
     """
     Get a globally cached LangChain ChatOpenAI client instance.

@@ -32,7 +32,7 @@ def step_1_create_hyde_doc(rewritten_query: str) -> str:
         logger.debug(f"Step 1: prompt loaded, length: {len(hyde_prompt)}")
 
         response = llm.invoke(hyde_prompt)
-        hyde_doc = response.content
+        hyde_doc = extract_response_text(response)
 
         logger.info(f"Step 1: hypothetical document generated, length: {len(hyde_doc)} chars")
         logger.debug(f"Step 1: document preview: {hyde_doc[:50]}...")

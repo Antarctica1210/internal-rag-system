@@ -4,7 +4,7 @@ from app.utils.sse_utils import push_to_session, SSEEvent
 from app.query_process.agent.state import QueryGraphState
 from app.core.logger import logger
 from app.core.load_prompt import load_prompt
-from app.lm.lm_utils import get_llm_client
+from app.lm.lm_utils import get_llm_client, extract_response_text
 from app.clients.mongo_history_utils import save_chat_message
 import re
 
@@ -143,7 +143,7 @@ def step_3_generate_response(state: QueryGraphState, prompt: str) -> QueryGraphS
         logger.info(f"mode: blocking, session={session_id}")
         try:
             response = llm.invoke(prompt)
-            content = response.content
+            content = extract_response_text(response)
             state["answer"] = content
             set_task_result(session_id, "answer", content)
             logger.info(f"answer generated, length: {len(content)}")
