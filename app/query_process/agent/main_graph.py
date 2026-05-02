@@ -8,7 +8,7 @@ from app.query_process.agent.nodes.node_search_embedding import node_search_embe
 from app.query_process.agent.nodes.node_search_embedding_hyde import (
     node_search_embedding_hyde,
 )
-from app.query_process.agent.nodes.node_web_search_mcp import node_web_search_mcp
+# from app.query_process.agent.nodes.node_web_search_mcp import node_web_search_mcp
 from app.query_process.agent.state import QueryGraphState
 
 builder = StateGraph(QueryGraphState)
@@ -17,7 +17,7 @@ builder = StateGraph(QueryGraphState)
 builder.add_node("node_item_name_confirm", node_item_name_confirm)
 builder.add_node("node_search_embedding", node_search_embedding)
 builder.add_node("node_search_embedding_hyde", node_search_embedding_hyde)
-builder.add_node("node_web_search_mcp", node_web_search_mcp)
+# builder.add_node("node_web_search_mcp", node_web_search_mcp)
 builder.add_node("node_rrf", node_rrf)
 builder.add_node("node_rerank", node_rerank)
 builder.add_node("node_answer_output", node_answer_output)
@@ -35,8 +35,8 @@ def route_after_item_confirm(state: QueryGraphState):
         # 2. Product not found — no match in the DB or confidence < 0.6; the node returns a
         #    rejection message. In both cases skip retrieval and go straight to output.
         return "node_answer_output"
-    # fan-out to all three parallel search nodes
-    return "node_search_embedding", "node_search_embedding_hyde", "node_web_search_mcp"
+    # fan-out to two parallel search nodes (MCP web search disabled)
+    return "node_search_embedding", "node_search_embedding_hyde"
 
 
 builder.add_conditional_edges(
@@ -46,14 +46,13 @@ builder.add_conditional_edges(
         "node_answer_output": "node_answer_output",
         "node_search_embedding": "node_search_embedding",
         "node_search_embedding_hyde": "node_search_embedding_hyde",
-        "node_web_search_mcp": "node_web_search_mcp",
     },
 )
 
 # all three search nodes converge into RRF
 builder.add_edge("node_search_embedding", "node_rrf")
 builder.add_edge("node_search_embedding_hyde", "node_rrf")
-builder.add_edge("node_web_search_mcp", "node_rrf")
+# builder.add_edge("node_web_search_mcp", "node_rrf")
 
 # normal pipeline
 builder.add_edge("node_rrf", "node_rerank")

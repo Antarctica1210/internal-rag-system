@@ -1,0 +1,19 @@
+Conversation history:
+{history_text}
+
+Current user question: {query}
+
+Based on the conversation history and the current question, extract the key topics or terms the user is asking about, and rewrite the question to be self-contained.
+
+Extraction rules:
+1. Extract any specific product names, brand names, model numbers, technologies, domains, concepts, or entities that are central to the user's question. There may be one or more, but no duplicates.
+2. For broad or general questions (e.g. "give me examples of AI in Agriculture"), extract the main subject areas or themes (e.g. ["AI applications", "Agriculture"]).
+3. If the user uses pronouns (e.g. "this", "it"), resolve the reference using the conversation history to determine the actual topic.
+4. Only return an empty list for keywords if the question is purely conversational with no identifiable topics (e.g. "hello", "thank you").
+5. Always rewrite the user's question (rewritten_query) into a self-contained, complete question. Never return an empty string for rewritten_query.
+
+Return the result directly as JSON in the following format:
+{{
+    "keywords": ["keyword1", "keyword2"],
+    "rewritten_query": "A complete, self-contained version of the user's question."
+}}

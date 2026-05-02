@@ -4,10 +4,10 @@ Conversation history:
 Current user question: {query}
 
 Based on the conversation history and the current question, extract the product name(s) (item_names) the user is asking about.
-1. If the user explicitly mentions product names, extract them. There may be one or more, but no duplicates.
+1. If the user explicitly mentions any product name, brand, or model number, extract it exactly as written. There may be one or more, but no duplicates.
 2. If the user uses pronouns (e.g. "this", "it"), resolve the reference using the conversation history to determine the product name.
-3. If the product name cannot be determined, return an empty list for item_names.
-4. Rewrite the user's question (rewritten_query) so that it is a self-contained, complete question that includes the product name(s).
+3. Only return an empty list for item_names if there is absolutely no product name, brand, or model number anywhere in the question or history.
+4. Always rewrite the user's question (rewritten_query) into a self-contained, complete question. If item_names is empty, rewrite it using the original phrasing. Never return an empty string for rewritten_query.
 
 Return the result directly as JSON in the following format:
 {{

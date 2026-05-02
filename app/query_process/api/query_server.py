@@ -86,14 +86,14 @@ async def query(request: QueryRequest, background_tasks: BackgroundTasks):
     logger.info(f"[{session_id}] task started, query: {user_query}")
 
     if is_stream:
-        background_tasks.add_task(run_query_graph, session_id, user_query, is_stream)
+        background_tasks.add_task(run_query_graph, user_query, session_id, is_stream)
         logger.info(f"[{session_id}] streaming task submitted to background")
         return {
             "message": "Processing, connect to /stream/{session_id} for results.",
             "session_id": session_id
         }
     else:
-        run_query_graph(session_id, user_query, is_stream)
+        run_query_graph(user_query, session_id, is_stream)
         answer = get_task_result(session_id, "answer", "")
         logger.info(f"[{session_id}] blocking query completed")
         return {

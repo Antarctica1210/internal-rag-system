@@ -127,7 +127,7 @@ def step_3_generate_response(state: QueryGraphState, prompt: str) -> QueryGraphS
         final_text = ""
         try:
             for chunk in llm.stream(prompt):
-                delta = getattr(chunk, "content", "") or ""
+                delta = extract_response_text(chunk)
                 if delta:
                     final_text += delta
                 push_to_session(session_id, SSEEvent.DELTA, {"delta": delta})

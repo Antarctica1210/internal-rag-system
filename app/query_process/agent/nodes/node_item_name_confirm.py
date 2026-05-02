@@ -35,23 +35,27 @@ def step_3_extract_info(query, history) -> Dict:
     client = get_llm_client(json_mode=True)
 
     # build history context text in "role: content" format
+    # skip messages whose text looks like a session/task ID (no spaces, >16 chars) to avoid
+    # polluted test data being misidentified as product names by the LLM
     history_text = ""
     for msg in history:
-        history_text += f"{msg['role']}: {msg['text']}\n"
+        text = (msg.get("text") or "").strip()
+        if text and not (" " not in text and len(text) > 16):
+            history_text += f"{msg['role']}: {text}\n"
     logger.info(f"Step 3: history context ready (length: {len(history_text)})")
-
-    prompt = load_prompt("rewritten_query_and_itemnames", history_text=history_text, query=query)
+    print(query)
+    prompt = load_prompt("rewritten_query_and_keywords", history_text=history_text, query=query)
     logger.info("Step 3: prompt loaded")
 
     messages = [
-        SystemMessage(content="You are a professional customer service assistant skilled at understanding user intent and extracting key information."),
+        SystemMessage(content="You are skilled at understanding user intent and extracting key information and key words."),
         HumanMessage(content=prompt)
     ]
 
     try:
         logger.info("Step 3: calling LLM...")
         response = client.invoke(messages)
-        logger.info("Step 3: LLM response received")
+        logger.info(f"Step 3: LLM response received {response}")
 
         content = extract_response_text(response)
         # strip markdown code-block wrapper if present (e.g. ```json ... ```)
@@ -61,9 +65,9 @@ def step_3_extract_info(query, history) -> Dict:
         result = json.loads(content)
         logger.info(f"Step 3: parsed LLM result: {result}")
 
-        if "item_names" not in result:
+        if not result.get("item_names"):
             result["item_names"] = []
-        if "rewritten_query" not in result:
+        if not result.get("rewritten_query"):
             result["rewritten_query"] = query
         return result
     except Exception as e:
@@ -181,8 +185,8 @@ def step_5_align_item_names(query_results) -> dict:
         # sort descending by score so the highest-confidence match comes first
         matches.sort(key=lambda x: x.get("score", 0), reverse=True)
 
-        high = [m for m in matches if m.get("score", 0) > 0.85]
-        mid = [m for m in matches if m.get("score", 0) >= 0.6]
+        high = [m for m in matches if m.get("score", 0) > 0.7 and m.get("score", 0) <= 1.0]
+        mid = [m for m in matches if m.get("score", 0) >= 0.5 and m.get("score", 0) <= 0.85]
 
         # rule a: exactly one high-confidence match
         if len(high) == 1:
@@ -316,7 +320,7 @@ def node_item_name_confirm(state):
 
     # step 3: extract item names and rewrite query via LLM
     extract_res = step_3_extract_info(original_query, history)
-    item_names = extract_res.get("item_names", [])
+    item_names = extract_res.get("item_names", []) or extract_res.get("keywords", [])
     rewritten_query = extract_res.get("rewritten_query", original_query)
     state["rewritten_query"] = rewritten_query
 
